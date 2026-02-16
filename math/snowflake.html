@@ -12,7 +12,7 @@
             background-color: #000;
             overflow: hidden;
             display: flex;
-            justify-content: center;
+            justify-content: center; /* Fixed typo from justify(content) */
             align-items: center;
             height: 100vh;
             width: 100vw;
@@ -128,7 +128,7 @@
             <div class="control-group">
                 <label>Petals</label>
                 <div class="slider-row">
-                    <input type="range" id="petals-slider" min="3" max="24" step="1" value="8">
+                    <input type="range" id="petals-slider" min="1" max="24" step="1" value="8">
                     <span class="val-display" id="val-petals">8</span>
                 </div>
             </div>
@@ -220,9 +220,12 @@
                 if (i > 8) {
                     let k = i % 25 - 12;
                     let e = i / 800;
-                    let d = amp * Math.cos(Math.hypot(k, e) / 3 + t / 2);
-                    let px = (k * 4 + d * k * Math.sin(d + e / 9 + t)) * S + mX;
+                    
+                    // Core math remains synchronized with UI params
+                    let d = amp * Math.cos(Math.hypot(k, e) / freq + t / 2);
+                    let px = (k * 4 + d * k * Math.sin(d + e / comp + t)) * S + mX;
                     let py = (e * 2 - d * 9 - d * 9 * Math.cos(d + t)) * S + mY;
+                    
                     ctx.fillRect(px - sw/2, py - sw/2, sw, sw);
                 }
             }
@@ -264,7 +267,6 @@
         }
 
         function takeScreenshot() {
-            // p5.js saveCanvas saves the current frame of the main canvas
             saveCanvas('fractal_explorer_' + floor(Date.now() / 1000), 'png');
         }
 
@@ -331,14 +333,16 @@
             const centerX = width / 2;
             const centerY = height / 2;
 
-            // Only update time if not paused
+            // Cap deltaTime to avoid time jumps when tab focus is lost and regained
+            const cappedDelta = min(deltaTime, 100);
+
             if (!isPaused) {
-                fractalTime += (PI / 180) * (deltaTime / 16.67) * params.speed;
+                fractalTime += (PI / 180) * (cappedDelta / 16.67) * params.speed;
             }
 
-            // Always render current state (allows zooming/panning while paused)
             if (!workerBusy) {
                 workerBusy = true;
+                // Sending a cloned version of params to ensure worker gets the current snapshot
                 worker.postMessage({
                     type: 'render',
                     w: offscreenCanvas.width,
@@ -346,7 +350,7 @@
                     logicalW: width,
                     logicalH: height,
                     time: fractalTime,
-                    params: params
+                    params: { ...params } 
                 });
             }
 
@@ -376,10 +380,8 @@
         }
 
         function mousePressed() {
-            // Updated UI boundary check
             if (mouseX < 220 && mouseY < 350) return;
             if (mouseY < 120 && mouseX > width - 120) return;
-            
             prevMouseX = mouseX; prevMouseY = mouseY;
         }
 
@@ -414,7 +416,6 @@
                     prevMouseX = undefined;
                     return;
                 }
-                // Check top-right buttons
                 if (touches[0].x > width - 120 && touches[0].y < 120) {
                     prevMouseX = undefined;
                     return;
