@@ -74,23 +74,32 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
-        .btn-fullscreen {
+        /* Container for top-right buttons */
+        .button-stack {
             position: absolute;
             top: 15px;
             right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .action-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: rgba(255, 255, 255, 0.5);
             padding: 8px 12px;
             border-radius: 4px;
             cursor: pointer;
-            z-index: 20;
-            pointer-events: auto;
-            transition: all 0.2s;
+            font-family: sans-serif;
             font-size: 12px;
+            transition: all 0.2s;
+            text-align: center;
         }
 
-        .btn-fullscreen:hover {
+        .action-btn:hover {
             background: rgba(255, 255, 255, 0.2);
             color: rgba(255, 255, 255, 0.8);
         }
@@ -105,6 +114,7 @@
             pointer-events: auto;
         }
         #credits a { color: inherit; text-decoration: none; }
+        #credits a:hover { color: rgba(255, 255, 255, 0.6); }
     </style>
 </head>
 <body>
@@ -118,7 +128,7 @@
             <div class="control-group">
                 <label>Petals</label>
                 <div class="slider-row">
-                    <input type="range" id="petals-slider" min="1" max="24" step="1" value="8">
+                    <input type="range" id="petals-slider" min="3" max="24" step="1" value="8">
                     <span class="val-display" id="val-petals">8</span>
                 </div>
             </div>
@@ -160,10 +170,14 @@
         </div>
     </div>
 
-    <button class="btn-fullscreen" onclick="toggleFullscreen()">Fullscreen</button>
+    <div class="button-stack">
+        <button class="action-btn" onclick="toggleFullscreen()">Fullscreen</button>
+        <button class="action-btn" id="play-pause-btn" onclick="togglePlayPause()">Pause</button>
+        <button class="action-btn" onclick="takeScreenshot()">Screenshot</button>
+    </div>
 
     <div id="credits">
-        <a href="https://x.com/yuruyurau" target="_blank">@yuruyurau</a>
+        credits to <a href="https://x.com/yuruyurau" target="_blank">@yuruyurau</a> and <a href="https://p5js.org/" target="_blank">p5.js</a>
     </div>
 
     <!-- WEB WORKER SCRIPT -->
@@ -206,7 +220,7 @@
                 if (i > 8) {
                     let k = i % 25 - 12;
                     let e = i / 800;
-                    let d = amp * Math.cos(Math.hypot(k, e) / freq + t / 2);
+                    let d = amp * Math.cos(Math.hypot(k, e) / 3 + t / 2);
                     let px = (k * 4 + d * k * Math.sin(d + e / 9 + t)) * S + mX;
                     let py = (e * 2 - d * 9 - d * 9 * Math.cos(d + t)) * S + mY;
                     ctx.fillRect(px - sw/2, py - sw/2, sw, sw);
@@ -225,6 +239,7 @@
         let lastPinchDist = 0;
         let prevMouseX, prevMouseY;
         let isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        let isPaused = false;
 
         let worker;
         let offscreenCanvas; 
@@ -241,6 +256,16 @@
 
         function toggleFullscreen() {
             fullscreen(!fullscreen());
+        }
+
+        function togglePlayPause() {
+            isPaused = !isPaused;
+            document.getElementById('play-pause-btn').innerText = isPaused ? 'Play' : 'Pause';
+        }
+
+        function takeScreenshot() {
+            // p5.js saveCanvas saves the current frame of the main canvas
+            saveCanvas('fractal_explorer_' + floor(Date.now() / 1000), 'png');
         }
 
         function setup() {
@@ -271,7 +296,7 @@
                 if (e.data.type === 'rendered') workerBusy = false;
             };
 
-            // Slider Listeners with Value Displays
+            // Slider Listeners
             document.getElementById('petals-slider').oninput = (e) => {
                 params.petals = parseInt(e.target.value);
                 document.getElementById('val-petals').innerText = params.petals;
@@ -306,9 +331,12 @@
             const centerX = width / 2;
             const centerY = height / 2;
 
-            // Updated with params.speed for dynamic evolution rate control
-            fractalTime += (PI / 180) * (deltaTime / 16.67) * params.speed;
+            // Only update time if not paused
+            if (!isPaused) {
+                fractalTime += (PI / 180) * (deltaTime / 16.67) * params.speed;
+            }
 
+            // Always render current state (allows zooming/panning while paused)
             if (!workerBusy) {
                 workerBusy = true;
                 worker.postMessage({
@@ -348,8 +376,9 @@
         }
 
         function mousePressed() {
-            if (mouseX < 220 && mouseY < 320) return;
-            if (mouseY < 60 && mouseX > width - 100) return;
+            // Updated UI boundary check
+            if (mouseX < 220 && mouseY < 350) return;
+            if (mouseY < 120 && mouseX > width - 120) return;
             
             prevMouseX = mouseX; prevMouseY = mouseY;
         }
@@ -381,7 +410,12 @@
             if (touches.length === 2) {
                 lastPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
             } else {
-                if (touches[0].x < 220 && touches[0].y < 320) {
+                if (touches[0].x < 220 && touches[0].y < 350) {
+                    prevMouseX = undefined;
+                    return;
+                }
+                // Check top-right buttons
+                if (touches[0].x > width - 120 && touches[0].y < 120) {
                     prevMouseX = undefined;
                     return;
                 }
