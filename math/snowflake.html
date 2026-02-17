@@ -12,7 +12,7 @@
             background-color: #000;
             overflow: hidden;
             display: flex;
-            justify-content: center; /* Fixed typo from justify(content) */
+            justify-content: center;
             align-items: center;
             height: 100vh;
             width: 100vw;
@@ -39,7 +39,7 @@
             margin-top: 10px;
             pointer-events: auto;
             backdrop-filter: blur(5px);
-            width: 200px;
+            width: 210px;
         }
 
         .control-group {
@@ -60,6 +60,13 @@
             gap: 10px;
         }
 
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 4px;
+        }
+
         .control-group input[type=range] {
             flex-grow: 1;
             cursor: pointer;
@@ -74,7 +81,6 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
-        /* Container for top-right buttons */
         .button-stack {
             position: absolute;
             top: 15px;
@@ -115,6 +121,34 @@
         }
         #credits a { color: inherit; text-decoration: none; }
         #credits a:hover { color: rgba(255, 255, 255, 0.6); }
+
+        /* Custom toggle switch style */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 30px;
+            height: 16px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .4s;
+            border-radius: 16px;
+        }
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 12px; width: 12px;
+            left: 2px; bottom: 2px;
+            background-color: rgba(255,255,255,0.4);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-toggle { background-color: rgba(255,255,255,0.3); }
+        input:checked + .slider-toggle:before { transform: translateX(14px); background-color: white; }
     </style>
 </head>
 <body>
@@ -128,7 +162,7 @@
             <div class="control-group">
                 <label>Petals</label>
                 <div class="slider-row">
-                    <input type="range" id="petals-slider" min="1" max="24" step="1" value="8">
+                    <input type="range" id="petals-slider" min="3" max="24" step="1" value="8">
                     <span class="val-display" id="val-petals">8</span>
                 </div>
             </div>
@@ -161,10 +195,26 @@
                 </div>
             </div>
             <div class="control-group">
+                <label>Transparency</label>
+                <div class="slider-row">
+                    <input type="range" id="alpha-slider" min="0.1" max="1.0" step="0.05" value="0.58">
+                    <span class="val-display" id="val-alpha">58%</span>
+                </div>
+            </div>
+            <div class="control-group">
                 <label>Points</label>
                 <div class="slider-row">
                     <input type="range" id="points-slider" min="2000" max="50000" step="1000" value="20000">
                     <span class="val-display" id="val-points">20k</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="toggle-row">
+                    <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Show Lines</span>
+                    <label class="switch">
+                        <input type="checkbox" id="line-toggle" >
+                        <span class="slider-toggle"></span>
+                    </label>
                 </div>
             </div>
         </div>
@@ -213,20 +263,52 @@
             const freq = params.freq;
             const comp = params.comp;
             const count = params.count;
+            const alpha = params.alpha;
+            const showLines = params.showLines;
 
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.58)';
+            if (showLines) {
+                // Connected Lines Mode
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.lineWidth = sw;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
 
-            for (let i = count; i--;) {
-                if (i > 8) {
-                    let k = i % 25 - 12;
-                    let e = i / 800;
-                    
-                    // Core math remains synchronized with UI params
-                    let d = amp * Math.cos(Math.hypot(k, e) / freq + t / 2);
-                    let px = (k * 4 + d * k * Math.sin(d + e / comp + t)) * S + mX;
-                    let py = (e * 2 - d * 9 - d * 9 * Math.cos(d + t)) * S + mY;
-                    
-                    ctx.fillRect(px - sw/2, py - sw/2, sw, sw);
+                const strandCount = 25;
+                const pointsPerStrand = Math.floor(count / strandCount);
+
+                for (let kIdx = 0; kIdx < strandCount; kIdx++) {
+                    const k = kIdx - 12;
+                    ctx.beginPath();
+                    let first = true;
+
+                    for (let step = 0; step < pointsPerStrand; step++) {
+                        const i = step * strandCount + kIdx; 
+                        const e = i / 800;
+                        const d = amp * Math.cos(Math.hypot(k, e) / freq + t / 2);
+                        const px = (k * 4 + d * k * Math.sin(d + e / comp + t)) * S + mX;
+                        const py = (e * 2 - d * 9 - d * 9 * Math.cos(d + t)) * S + mY;
+                        
+                        if (first) {
+                            ctx.moveTo(px, py);
+                            first = false;
+                        } else {
+                            ctx.lineTo(px, py);
+                        }
+                    }
+                    ctx.stroke();
+                }
+            } else {
+                // Eerie Point Cloud Mode
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                for (let i = count; i--;) {
+                    if (i > 8) {
+                        let k = i % 25 - 12;
+                        let e = i / 800;
+                        let d = amp * Math.cos(Math.hypot(k, e) / freq + t / 2);
+                        let px = (k * 4 + d * k * Math.sin(d + e / comp + t)) * S + mX;
+                        let py = (e * 2 - d * 9 - d * 9 * Math.cos(d + t)) * S + mY;
+                        ctx.fillRect(px - sw/2, py - sw/2, sw, sw);
+                    }
                 }
             }
 
@@ -254,7 +336,9 @@
             comp: 9,
             count: 20000,
             petals: 8,
-            speed: 1.0
+            speed: 1.0,
+            alpha: 0.58,
+            showLines: false
         };
 
         function toggleFullscreen() {
@@ -298,7 +382,7 @@
                 if (e.data.type === 'rendered') workerBusy = false;
             };
 
-            // Slider Listeners
+            // Slider and Toggle Listeners
             document.getElementById('petals-slider').oninput = (e) => {
                 params.petals = parseInt(e.target.value);
                 document.getElementById('val-petals').innerText = params.petals;
@@ -319,9 +403,16 @@
                 params.comp = parseFloat(e.target.value);
                 document.getElementById('val-comp').innerText = params.comp.toFixed(1);
             };
+            document.getElementById('alpha-slider').oninput = (e) => {
+                params.alpha = parseFloat(e.target.value);
+                document.getElementById('val-alpha').innerText = Math.round(params.alpha * 100) + '%';
+            };
             document.getElementById('points-slider').oninput = (e) => {
                 params.count = parseInt(e.target.value);
                 document.getElementById('val-points').innerText = (params.count / 1000) + 'k';
+            };
+            document.getElementById('line-toggle').onchange = (e) => {
+                params.showLines = e.target.checked;
             };
 
             background(0);
@@ -333,7 +424,6 @@
             const centerX = width / 2;
             const centerY = height / 2;
 
-            // Cap deltaTime to avoid time jumps when tab focus is lost and regained
             const cappedDelta = min(deltaTime, 100);
 
             if (!isPaused) {
@@ -342,7 +432,6 @@
 
             if (!workerBusy) {
                 workerBusy = true;
-                // Sending a cloned version of params to ensure worker gets the current snapshot
                 worker.postMessage({
                     type: 'render',
                     w: offscreenCanvas.width,
@@ -380,7 +469,8 @@
         }
 
         function mousePressed() {
-            if (mouseX < 220 && mouseY < 350) return;
+            // Updated UI boundary check for additional controls
+            if (mouseX < 230 && mouseY < 400) return;
             if (mouseY < 120 && mouseX > width - 120) return;
             prevMouseX = mouseX; prevMouseY = mouseY;
         }
@@ -412,7 +502,7 @@
             if (touches.length === 2) {
                 lastPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
             } else {
-                if (touches[0].x < 220 && touches[0].y < 350) {
+                if (touches[0].x < 230 && touches[0].y < 400) {
                     prevMouseX = undefined;
                     return;
                 }
