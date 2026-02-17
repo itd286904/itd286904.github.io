@@ -122,7 +122,6 @@
         #credits a { color: inherit; text-decoration: none; }
         #credits a:hover { color: rgba(255, 255, 255, 0.6); }
 
-        /* Custom toggle switch style */
         .switch {
             position: relative;
             display: inline-block;
@@ -212,7 +211,7 @@
                 <div class="toggle-row">
                     <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Show Lines</span>
                     <label class="switch">
-                        <input type="checkbox" id="line-toggle" >
+                        <input type="checkbox" id="line-toggle">
                         <span class="slider-toggle"></span>
                     </label>
                 </div>
@@ -267,7 +266,6 @@
             const showLines = params.showLines;
 
             if (showLines) {
-                // Connected Lines Mode
                 ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
                 ctx.lineWidth = sw;
                 ctx.lineCap = 'round';
@@ -298,7 +296,6 @@
                     ctx.stroke();
                 }
             } else {
-                // Eerie Point Cloud Mode
                 ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
                 for (let i = count; i--;) {
                     if (i > 8) {
@@ -325,6 +322,7 @@
         let prevMouseX, prevMouseY;
         let isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         let isPaused = false;
+        let loadStartTime = 0;
 
         let worker;
         let offscreenCanvas; 
@@ -338,7 +336,7 @@
             petals: 8,
             speed: 1.0,
             alpha: 0.58,
-            showLines: false
+            showLines: false // Set to false by default
         };
 
         function toggleFullscreen() {
@@ -361,6 +359,8 @@
             const dPR = displayDensity();
             pixelDensity(dPR);
             
+            loadStartTime = millis();
+
             const blob = new Blob([document.getElementById('worker-script').textContent], { type: 'text/javascript' });
             worker = new Worker(URL.createObjectURL(blob));
 
@@ -382,7 +382,6 @@
                 if (e.data.type === 'rendered') workerBusy = false;
             };
 
-            // Slider and Toggle Listeners
             document.getElementById('petals-slider').oninput = (e) => {
                 params.petals = parseInt(e.target.value);
                 document.getElementById('val-petals').innerText = params.petals;
@@ -423,7 +422,6 @@
             
             const centerX = width / 2;
             const centerY = height / 2;
-
             const cappedDelta = min(deltaTime, 100);
 
             if (!isPaused) {
@@ -432,6 +430,9 @@
 
             if (!workerBusy) {
                 workerBusy = true;
+                
+                let fadeProgress = Math.min(1, (millis() - loadStartTime) / 1000);
+                
                 worker.postMessage({
                     type: 'render',
                     w: offscreenCanvas.width,
@@ -439,7 +440,11 @@
                     logicalW: width,
                     logicalH: height,
                     time: fractalTime,
-                    params: { ...params } 
+                    params: { 
+                        ...params,
+                        alpha: params.alpha * fadeProgress,
+                        count: Math.floor(params.count * fadeProgress) // Coordinated density growth
+                    } 
                 });
             }
 
@@ -469,7 +474,6 @@
         }
 
         function mousePressed() {
-            // Updated UI boundary check for additional controls
             if (mouseX < 230 && mouseY < 400) return;
             if (mouseY < 120 && mouseX > width - 120) return;
             prevMouseX = mouseX; prevMouseY = mouseY;
