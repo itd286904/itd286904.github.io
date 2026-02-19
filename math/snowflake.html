@@ -255,15 +255,22 @@
             
             const mX = w / 2;
             const mY = h / 2;
+            
             const S = (Math.min(logicalW, logicalH) / 350) * dPR;
-            const sw = (isMobile ? 0.70 : 0.80) * dPR;
+            
+            const showLines = params.showLines;
+            const baseSW = isMobile ? 0.70 : 0.80;
+            const sw = (showLines ? baseSW / 2 : baseSW) * dPR;
 
             const amp = params.amp;
             const freq = params.freq;
             const comp = params.comp;
             const count = params.count;
             const alpha = params.alpha;
-            const showLines = params.showLines;
+            
+            // Note: Pan (ox, oy) is removed from the worker math and handled in main thread 
+            // to ensure rotation doesn't warp the panning direction.
+            const zoom = params.zoom;
 
             if (showLines) {
                 ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
@@ -283,8 +290,12 @@
                         const i = step * strandCount + kIdx; 
                         const e = i / 800;
                         const d = amp * Math.cos(Math.hypot(k, e) / freq + t / 2);
-                        const px = (k * 4 + d * k * Math.sin(d + e / comp + t)) * S + mX;
-                        const py = (e * 2 - d * 9 - d * 9 * Math.cos(d + t)) * S + mY;
+                        
+                        const rawX = (k * 4 + d * k * Math.sin(d + e / comp + t));
+                        const rawY = (e * 2 - d * 9 - d * 9 * Math.cos(d + t));
+                        
+                        const px = (rawX * zoom) * S + mX;
+                        const py = (rawY * zoom) * S + mY;
                         
                         if (first) {
                             ctx.moveTo(px, py);
@@ -302,8 +313,13 @@
                         let k = i % 25 - 12;
                         let e = i / 800;
                         let d = amp * Math.cos(Math.hypot(k, e) / freq + t / 2);
-                        let px = (k * 4 + d * k * Math.sin(d + e / comp + t)) * S + mX;
-                        let py = (e * 2 - d * 9 - d * 9 * Math.cos(d + t)) * S + mY;
+                        
+                        const rawX = (k * 4 + d * k * Math.sin(d + e / comp + t));
+                        const rawY = (e * 2 - d * 9 - d * 9 * Math.cos(d + t));
+                        
+                        const px = (rawX * zoom) * S + mX;
+                        const py = (rawY * zoom) * S + mY;
+                        
                         ctx.fillRect(px - sw/2, py - sw/2, sw, sw);
                     }
                 }
@@ -336,7 +352,7 @@
             petals: 8,
             speed: 1.0,
             alpha: 0.58,
-            showLines: false // Set to false by default
+            showLines: false
         };
 
         function toggleFullscreen() {
@@ -443,22 +459,23 @@
                     params: { 
                         ...params,
                         alpha: params.alpha * fadeProgress,
-                        count: Math.floor(params.count * fadeProgress) // Coordinated density growth
+                        count: Math.floor(params.count * fadeProgress),
+                        zoom: viewZoom
                     } 
                 });
             }
 
+            // Global pan translation applied here in the main thread
             push();
-            translate(centerX + viewOffsetX, centerY + viewOffsetY);
-            scale(viewZoom);
-            translate(-centerX, -centerY);
-
+            translate(viewOffsetX, viewOffsetY);
+            
             const ctx = drawingContext;
-
             for (let r = 0; r < params.petals; r++) {
                 push();
                 translate(centerX, centerY);
                 rotate(r * (TWO_PI / params.petals));
+                // Coordinates inside the buffer are mathematical, 
+                // drawing it at logical size keeps lines crisp.
                 ctx.drawImage(offscreenCanvas, -centerX, -centerY, width, height);
                 pop();
             }
@@ -527,6 +544,9 @@
             const w = max(1, windowWidth * 0.99);
             const h = max(1, windowHeight * 0.99);
             resizeCanvas(w, h);
+            const dPR = displayDensity();
+            offscreenCanvas.width = w * dPR;
+            offscreenCanvas.height = h * dPR;
         }
     </script>
 </body>
