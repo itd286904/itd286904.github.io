@@ -161,7 +161,8 @@
             <div class="control-group">
                 <label>Petals</label>
                 <div class="slider-row">
-                    <input type="range" id="petals-slider" min="3" max="24" step="1" value="8">
+                    <!-- Updated min from 3 to 1 -->
+                    <input type="range" id="petals-slider" min="1" max="24" step="1" value="8">
                     <span class="val-display" id="val-petals">8</span>
                 </div>
             </div>
@@ -208,6 +209,13 @@
                 </div>
             </div>
             <div class="control-group">
+                <div class="toggle-row">
+                    <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Symmetry</span>
+                    <label class="switch">
+                        <input type="checkbox" id="symmetry-toggle" checked>
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
                 <div class="toggle-row">
                     <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Show Lines</span>
                     <label class="switch">
@@ -268,8 +276,6 @@
             const count = params.count;
             const alpha = params.alpha;
             
-            // Note: Pan (ox, oy) is removed from the worker math and handled in main thread 
-            // to ensure rotation doesn't warp the panning direction.
             const zoom = params.zoom;
 
             if (showLines) {
@@ -352,7 +358,8 @@
             petals: 8,
             speed: 1.0,
             alpha: 0.58,
-            showLines: false
+            showLines: false,
+            showSymmetry: true
         };
 
         function toggleFullscreen() {
@@ -429,6 +436,9 @@
             document.getElementById('line-toggle').onchange = (e) => {
                 params.showLines = e.target.checked;
             };
+            document.getElementById('symmetry-toggle').onchange = (e) => {
+                params.showSymmetry = e.target.checked;
+            };
 
             background(0);
         }
@@ -465,17 +475,20 @@
                 });
             }
 
-            // Global pan translation applied here in the main thread
             push();
+            // Apply global pan
             translate(viewOffsetX, viewOffsetY);
             
             const ctx = drawingContext;
-            for (let r = 0; r < params.petals; r++) {
+            
+            const petalCount = params.showSymmetry ? params.petals : 1;
+            
+            for (let r = 0; r < petalCount; r++) {
                 push();
                 translate(centerX, centerY);
-                rotate(r * (TWO_PI / params.petals));
-                // Coordinates inside the buffer are mathematical, 
-                // drawing it at logical size keeps lines crisp.
+                if (params.showSymmetry) {
+                    rotate(r * (TWO_PI / params.petals));
+                }
                 ctx.drawImage(offscreenCanvas, -centerX, -centerY, width, height);
                 pop();
             }
@@ -491,7 +504,7 @@
         }
 
         function mousePressed() {
-            if (mouseX < 230 && mouseY < 400) return;
+            if (mouseX < 230 && mouseY < 450) return;
             if (mouseY < 120 && mouseX > width - 120) return;
             prevMouseX = mouseX; prevMouseY = mouseY;
         }
@@ -523,7 +536,7 @@
             if (touches.length === 2) {
                 lastPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
             } else {
-                if (touches[0].x < 230 && touches[0].y < 400) {
+                if (touches[0].x < 230 && touches[0].y < 450) {
                     prevMouseX = undefined;
                     return;
                 }
