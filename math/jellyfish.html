@@ -25,7 +25,10 @@
             width: 100vw;
             touch-action: none;
         }
-        canvas { display: block; }
+        canvas { 
+            display: block;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
         
         #ui-layer {
             position: absolute;
@@ -270,11 +273,8 @@
             const mX = w / 2;
             const mY = h / 2;
             
-            // To preserve aspect ratio and cause elliptical motion in wide windows,
-            // we calculate scale factors for X and Y separately based on the logical size.
-            // This maps the original 400x400 unit coordinate system to the full logical window.
-            const sX = (logicalW / 400) * dPR;
-            const sY = (logicalH / 400) * dPR;
+            // Unified scale factor S for circular 1:1 geometry
+            const S = (Math.min(logicalW, logicalH) / 400) * dPR;
             
             const showLines = params.showLines;
             const baseSW = isMobile ? 0.8 : 1.0;
@@ -287,6 +287,10 @@
             const alpha = params.alpha;
             const zoom = params.zoom;
             const lobeCount = params.petals;
+            const showSymmetry = params.showSymmetry;
+
+            const ox = params.offsetX * dPR;
+            const oy = params.offsetY * dPR;
 
             if (showLines) {
                 ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
@@ -296,59 +300,70 @@
 
                 const strandCount = 48; 
                 const pointsPerStrand = Math.floor(count / strandCount);
+                const symmCount = showSymmetry ? 8 : 1;
 
-                for (let kIdx = 0; kIdx < strandCount; kIdx++) {
-                    ctx.beginPath();
-                    let first = true;
+                for (let r = 0; r < symmCount; r++) {
+                    const symmRotation = r * (Math.PI * 2 / symmCount);
+                    
+                    for (let kIdx = 0; kIdx < strandCount; kIdx++) {
+                        ctx.beginPath();
+                        let first = true;
 
-                    for (let step = 0; step < pointsPerStrand; step++) {
-                        const i = step * strandCount + kIdx; 
+                        for (let step = 0; step < pointsPerStrand; step++) {
+                            const i = step * strandCount + kIdx; 
+                            const y = i / 99;
+                            const k = 9 * Math.cos(y * 2);
+                            const e = y / 8 - 12;
+                            const d = (k*k + e*e) / (79 * freq) + 1;
+                            const q = 79 - e * Math.sin(k) + k/d * (8 + amp * Math.sin(Math.sin(d*d + e/comp - t)));
+                            
+                            const angleOffset = (i % lobeCount) * (Math.PI * 2 / lobeCount);
+                            const c = d/2 - Math.cos(d*2)/5 - t/16 + angleOffset + symmRotation;
+                            
+                            // Updated rawX and rawY to use the same (q + 40) radius
+                            // This ensures the trajectory is a circle, not a vertically elongated ellipse.
+                            const cx = (q + 40) * Math.sin(c);
+                            const cy = (q + 40) * Math.cos(c);
+                            
+                            const px = (cx * zoom) * S + mX + ox;
+                            const py = (cy * zoom) * S + mY + oy;
+                            
+                            if (first) {
+                                ctx.moveTo(px, py);
+                                first = false;
+                            } else {
+                                ctx.lineTo(px, py);
+                            }
+                        }
+                        ctx.stroke();
+                    }
+                }
+            } else {
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                const symmCount = showSymmetry ? 8 : 1;
+
+                for (let r = 0; r < symmCount; r++) {
+                    const symmRotation = r * (Math.PI * 2 / symmCount);
+
+                    for (let i = count; i--;) {
                         const y = i / 99;
                         const k = 9 * Math.cos(y * 2);
                         const e = y / 8 - 12;
                         const d = (k*k + e*e) / (79 * freq) + 1;
-                        
                         const q = 79 - e * Math.sin(k) + k/d * (8 + amp * Math.sin(Math.sin(d*d + e/comp - t)));
                         
                         const angleOffset = (i % lobeCount) * (Math.PI * 2 / lobeCount);
-                        const c = d/2 - Math.cos(d*2)/5 - t/16 + angleOffset;
+                        const c = d/2 - Math.cos(d*2)/5 - t/16 + angleOffset + symmRotation;
                         
-                        const rawX = q * Math.sin(c);
-                        const rawY = (q + 40) * Math.cos(c);
+                        // Updated to match X and Y radii for circular motion
+                        const cx = (q + 40) * Math.sin(c);
+                        const cy = (q + 40) * Math.cos(c);
                         
-                        // Use separate scale factors sX and sY to follow window aspect ratio
-                        const px = (rawX * zoom) * sX + mX;
-                        const py = (rawY * zoom) * sY + mY;
+                        const px = (cx * zoom) * S + mX + ox;
+                        const py = (cy * zoom) * S + mY + oy;
                         
-                        if (first) {
-                            ctx.moveTo(px, py);
-                            first = false;
-                        } else {
-                            ctx.lineTo(px, py);
-                        }
+                        ctx.fillRect(px - sw/2, py - sw/2, sw, sw);
                     }
-                    ctx.stroke();
-                }
-            } else {
-                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                for (let i = count; i--;) {
-                    const y = i / 99;
-                    const k = 9 * Math.cos(y * 2);
-                    const e = y / 8 - 12;
-                    const d = (k*k + e*e) / (79 * freq) + 1;
-                    
-                    const q = 79 - e * Math.sin(k) + k/d * (8 + amp * Math.sin(Math.sin(d*d + e/comp - t)));
-                    
-                    const angleOffset = (i % lobeCount) * (Math.PI * 2 / lobeCount);
-                    const c = d/2 - Math.cos(d*2)/5 - t/16 + angleOffset;
-                    
-                    const rawX = q * Math.sin(c);
-                    const rawY = (q + 40) * Math.cos(c);
-                    
-                    const px = (rawX * zoom) * sX + mX;
-                    const py = (rawY * zoom) * sY + mY;
-                    
-                    ctx.fillRect(px - sw/2, py - sw/2, sw, sw);
                 }
             }
 
@@ -403,9 +418,8 @@
         }
 
         function setup() {
-            const w = max(1, windowWidth * 0.99);
-            const h = max(1, windowHeight * 0.99);
-            createCanvas(w, h);
+            const side = min(windowWidth, windowHeight);
+            createCanvas(side, side);
             const dPR = displayDensity();
             pixelDensity(dPR);
             
@@ -414,11 +428,9 @@
             const blob = new Blob([document.getElementById('worker-script').textContent], { type: 'text/javascript' });
             worker = new Worker(URL.createObjectURL(blob));
 
-            const bufferSizeW = w * dPR;
-            const bufferSizeH = h * dPR;
             offscreenCanvas = document.createElement('canvas');
-            offscreenCanvas.width = bufferSizeW;
-            offscreenCanvas.height = bufferSizeH;
+            offscreenCanvas.width = side * dPR;
+            offscreenCanvas.height = side * dPR;
             
             const offscreen = offscreenCanvas.transferControlToOffscreen();
 
@@ -473,9 +485,6 @@
 
         function draw() {
             background(0);
-            
-            const centerX = width / 2;
-            const centerY = height / 2;
             const cappedDelta = min(deltaTime, 100);
 
             if (!isPaused) {
@@ -497,26 +506,14 @@
                         ...params,
                         alpha: params.alpha * fadeProgress,
                         count: Math.floor(params.count * fadeProgress),
-                        zoom: viewZoom
+                        zoom: viewZoom,
+                        offsetX: viewOffsetX,
+                        offsetY: viewOffsetY
                     } 
                 });
             }
 
-            push();
-            translate(viewOffsetX, viewOffsetY);
-            const ctx = drawingContext;
-            const symmetryLoops = params.showSymmetry ? 8 : 1; 
-            
-            for (let r = 0; r < symmetryLoops; r++) {
-                push();
-                translate(centerX, centerY);
-                if (params.showSymmetry) {
-                    rotate(r * (TWO_PI / 8));
-                }
-                ctx.drawImage(offscreenCanvas, -centerX, -centerY, width, height);
-                pop();
-            }
-            pop();
+            drawingContext.drawImage(offscreenCanvas, 0, 0, width, height);
             
             document.getElementById('fps').innerText = `FPS: ${floor(frameRate())}`;
             document.getElementById('zoom-label').innerText = `Zoom: ${viewZoom.toFixed(2)}x`;
@@ -578,12 +575,11 @@
         }
 
         function windowResized() {
-            const w = max(1, windowWidth * 0.99);
-            const h = max(1, windowHeight * 0.99);
-            resizeCanvas(w, h);
+            const side = min(windowWidth, windowHeight);
+            resizeCanvas(side, side);
             const dPR = displayDensity();
-            offscreenCanvas.width = w * dPR;
-            offscreenCanvas.height = h * dPR;
+            offscreenCanvas.width = side * dPR;
+            offscreenCanvas.height = side * dPR;
         }
     </script>
 </body>
