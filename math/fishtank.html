@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Fractal Explorer PWA</title>
+    <!-- PWA Metadata -->
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://p5js.org/assets/img/p5js.svg">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            touch-action: none;
+        }
+        canvas { 
+            display: block;
+            /* Ensure the canvas element itself doesn't get distorted by the browser during resize */
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: contain;
+        }
+        
+        #ui-layer {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            pointer-events: none;
+            user-select: none;
+            z-index: 10;
+        }
+
+        #control-box {
+            background: rgba(20, 20, 20, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+            width: 210px;
+        }
+
+        .control-group {
+            margin-bottom: 8px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center; gap: 10px;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 4px;
+        }
+
+        .control-group input[type=range] {
+            flex-grow: 1;
+            cursor: pointer;
+            accent-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .val-display {
+            font-size: 11px;
+            font-family: monospace;
+            min-width: 35px;
+            text-align: right;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .button-stack {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.5);
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: sans-serif;
+            font-size: 12px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        #credits {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-family: sans-serif;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+            pointer-events: auto;
+        }
+        #credits a { color: inherit; text-decoration: none; }
+        #credits a:hover { color: rgba(255, 255, 255, 0.6); }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 30px;
+            height: 16px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .4s;
+            border-radius: 16px;
+        }
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 12px; width: 12px;
+            left: 2px; bottom: 2px;
+            background-color: rgba(255,255,255,0.4);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-toggle { background-color: rgba(255,255,255,0.3); }
+        input:checked + .slider-toggle:before { transform: translateX(14px); background-color: white; }
+    </style>
+</head>
+<body>
+    <div id="ui-layer">
+        <div id="status">
+            <span id="fps" style="font-weight: bold;">FPS: 0</span> • 
+            <span id="threads-label">Threads: 1</span> •
+            <span id="zoom-label">Zoom: 1.00x</span>
+        </div>
+
+        <div id="control-box">
+            <div class="control-group">
+                <label>Jellyfish Count</label>
+                <div class="slider-row">
+                    <input type="range" id="petals-slider" min="1" max="50" step="1" value="5">
+                    <span class="val-display" id="val-petals">5</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Movement Power</label>
+                <div class="slider-row">
+                    <input type="range" id="radius-slider" min="0" max="10" step="0.1" value="3.5">
+                    <span class="val-display" id="val-radius">3.5</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Pulse Speed (Link)</label>
+                <div class="slider-row">
+                    <input type="range" id="speed-slider" min="0" max="10" step="0.1" value="5">
+                    <span class="val-display" id="val-speed">5.0</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Amplitude</label>
+                <div class="slider-row">
+                    <input type="range" id="amp-slider" min="0" max="5" step="0.1" value="3">
+                    <span class="val-display" id="val-amp">3.0</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Frequency</label>
+                <div class="slider-row">
+                    <input type="range" id="freq-slider" min="0.01" max="1" step="0.01" value="0.60">
+                    <span class="val-display" id="val-freq">0.60</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Complexity</label>
+                <div class="slider-row">
+                    <input type="range" id="comp-slider" min="1" max="50" step="1" value="9.0">
+                    <span class="val-display" id="val-comp">9.0</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Transparency</label>
+                <div class="slider-row">
+                    <input type="range" id="alpha-slider" min="0.1" max="1.0" step="0.05" value="0.58">
+                    <span class="val-display" id="val-alpha">58%</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Points / Fish</label>
+                <div class="slider-row">
+                    <input type="range" id="points-slider" min="1000" max="30000" step="1000" value="20000">
+                    <span class="val-display" id="val-points">20k</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="toggle-row">
+                    <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">Show Lines</span>
+                    <label class="switch">
+                        <input type="checkbox" id="line-toggle">
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="button-stack">
+        <button class="action-btn" onclick="toggleFullscreen()">Fullscreen</button>
+        <button class="action-btn" id="play-pause-btn" onclick="togglePlayPause()">Pause</button>
+        <button class="action-btn" onclick="takeScreenshot()">Screenshot</button>
+    </div>
+
+    <div id="credits">
+        credits to <a href="https://x.com/yuruyurau" target="_blank">@yuruyurau</a> and <a href="https://p5js.org/" target="_blank">p5.js</a>
+    </div>
+
+    <!-- WEB WORKER SCRIPT -->
+    <script id="worker-script" type="text/worker">
+        let canvas, ctx;
+        let dPR = 1;
+
+        self.onmessage = function(e) {
+            const { type, w, h, time, density, params, workerId } = e.data;
+            if (type === 'init') {
+                canvas = e.data.canvas;
+                ctx = canvas.getContext('2d');
+                dPR = density;
+            } else if (type === 'render') {
+                render(w, h, time, params, workerId);
+            }
+        };
+
+        function render(w, h, t, params, workerId) {
+            if (!ctx) return;
+            // Physical clearance
+            ctx.clearRect(0, 0, w, h);
+            
+            const mX = w / 2;
+            const mY = h / 2;
+            const S = dPR; // 1 unit in simulation = 1 logical pixel
+            
+            const { showLines, amp, freq, comp, count, alpha: globalAlpha, zoom, jellyfish: jellyfishList, limitX, limitY } = params;
+            const rangeX = limitX * 2;
+            const rangeY = limitY * 2;
+            const baseSW = dPR;
+            const sw = showLines ? baseSW / 2 : baseSW;
+
+            // Ping-Pong reflection logic handles mirroring point-by-point
+            function getReflected(v, limit, range) {
+                let d = (v + limit) % (range * 2);
+                if (d < 0) d += range * 2;
+                return (d < range) ? (d - limit) : (range - (d - range) - limit);
+            }
+
+            jellyfishList.forEach(agent => {
+                const { posX, posY, angle, hue, size: sz } = agent;
+                const cosA = Math.cos(angle);
+                const sinA = Math.sin(angle);
+
+                if (showLines) {
+                    ctx.lineWidth = sw;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    const strandCount = 48; 
+                    const pointsPerStrand = Math.floor(count / strandCount);
+
+                    for (let kIdx = 0; kIdx < strandCount; kIdx++) {
+                        ctx.beginPath();
+                        let first = true;
+                        for (let step = 0; step < pointsPerStrand; step++) {
+                            const i = step * strandCount + kIdx; 
+                            const y = i / 99;
+                            const k = 9 * Math.cos(y * 2);
+                            const e = y / 8 - 12;
+                            const d = (k*k + e*e) / (79 * freq) + 1;
+                            const q = 79 - e * Math.sin(k) + k/d * (8 + amp * Math.sin(Math.sin(d*d + e/comp - t)));
+                            
+                            const glowFactor = Math.max(0, Math.min(1.0, 3.5 / Math.pow(d, 1.3)));
+                            const pointAlpha = globalAlpha * glowFactor;
+                            
+                            // 1. Orthogonal Cartesian Geometry (Spine + Pulsing Width)
+                            // sz is applied uniformly to both X and Y to preserve aspect ratio
+                            const localX = ((d * -50) + 100) * sz;
+                            const localY = q * sz;
+                            
+                            // 2. Uniform 2D Rotation
+                            const rotX = localX * cosA - localY * sinA;
+                            const rotY = localX * sinA + localY * cosA;
+                            
+                            // 3. Translate and Mirror (The "Folding" effect)
+                            const cx = getReflected(rotX + posX, limitX, rangeX);
+                            const cy = getReflected(rotY + posY, limitY, rangeY);
+                            
+                            // 4. Project to Physical Pixels
+                            const px = (cx * zoom) * S + mX;
+                            const py = (cy * zoom) * S + mY;
+                            
+                            if (first) {
+                                ctx.moveTo(px, py);
+                                first = false;
+                            } else {
+                                ctx.strokeStyle = `hsla(${hue}, ${70 + 30 * glowFactor}%, ${50 + 20 * glowFactor}%, ${pointAlpha})`;
+                                ctx.lineTo(px, py);
+                                ctx.stroke();
+                                ctx.beginPath();
+                                ctx.moveTo(px, py);
+                            }
+                        }
+                    }
+                } else {
+                    for (let i = count; i--;) {
+                        const y = i / 99;
+                        const k = 9 * Math.cos(y * 2);
+                        const e = y / 8 - 12;
+                        const d = (k*k + e*e) / (79 * freq) + 1;
+                        const q = 79 - e * Math.sin(k) + k/d * (8 + amp * Math.sin(Math.sin(d*d + e/comp - t)));
+                        
+                        const glowFactor = Math.max(0, Math.min(1.0, 3.5 / Math.pow(d, 1.3)));
+                        const localX = ((d * -50) + 100) * sz;
+                        const localY = q * sz;
+                        const worldX = localX * cosA - localY * sinA + posX;
+                        const worldY = localX * sinA + localY * cosA + posY;
+                        const cx = getReflected(worldX, limitX, rangeX);
+                        const cy = getReflected(worldY, limitY, rangeY);
+                        const px = (cx * zoom) * S + mX;
+                        const py = (cy * zoom) * S + mY;
+                        
+                        ctx.fillStyle = `hsla(${hue}, ${70 + 30 * glowFactor}%, ${50 + 20 * glowFactor}%, ${globalAlpha * glowFactor})`;
+                        ctx.fillRect(px - sw/2, py - sw/2, sw, sw);
+                    }
+                }
+            });
+
+            self.postMessage({ type: 'rendered', workerId: workerId });
+        }
+    </script>
+
+    <script>
+        let fractalTime = 0;
+        let viewZoom = 1.0; 
+        let viewOffsetX = 0, viewOffsetY = 0;
+        let lastPinchDist = 0;
+        let prevMouseX, prevMouseY;
+        let isPaused = false;
+        let loadStartTime = 0;
+
+        let jellyfish = [];
+        let workers = [];
+        let offscreenCanvases = [];
+        let workerStatus = []; 
+        
+        const threadCount = Math.min(navigator.hardwareConcurrency || 4, 8);
+
+        const params = {
+            amp: 3.0, freq: 0.60, comp: 9.0, count: 20000, petals: 5,   
+            radius: 3.5, speed: 5.0, alpha: 0.58, showLines: false
+        };
+
+        function createJellyfish() {
+            const angle = random(TWO_PI);
+            const limitX = width / (2 * viewZoom);
+            const limitY = height / (2 * viewZoom);
+            return {
+                posX: random(-limitX, limitX),
+                posY: random(-limitY, limitY),
+                velX: cos(angle),
+                velY: sin(angle),
+                angle: angle,
+                hue: random(360),
+                size: random(0.33, 1.33),
+                lastTileX: 0, lastTileY: 0
+            };
+        }
+
+        function updateJellyfishArray() {
+            while (jellyfish.length < params.petals) jellyfish.push(createJellyfish());
+            if (jellyfish.length > params.petals) jellyfish = jellyfish.slice(0, params.petals);
+        }
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            const dPR = displayDensity();
+            pixelDensity(dPR);
+            
+            document.getElementById('threads-label').innerText = `Threads: ${threadCount}`;
+            updateJellyfishArray();
+            loadStartTime = millis();
+
+            const workerBlob = new Blob([document.getElementById('worker-script').textContent], { type: 'text/javascript' });
+            const workerUrl = URL.createObjectURL(workerBlob);
+
+            for (let i = 0; i < threadCount; i++) {
+                const w = new Worker(workerUrl);
+                const osc = document.createElement('canvas');
+                osc.width = width * dPR;
+                osc.height = height * dPR;
+                const off = osc.transferControlToOffscreen();
+                w.postMessage({ type: 'init', canvas: off, density: dPR }, [off]);
+                w.onmessage = (e) => { if (e.data.type === 'rendered') workerStatus[e.data.workerId] = false; };
+                workers.push(w);
+                offscreenCanvases.push(osc);
+                workerStatus.push(false);
+            }
+
+            document.getElementById('petals-slider').oninput = (e) => { params.petals = parseInt(e.target.value); document.getElementById('val-petals').innerText = params.petals; updateJellyfishArray(); };
+            document.getElementById('radius-slider').oninput = (e) => { params.radius = parseFloat(e.target.value); document.getElementById('val-radius').innerText = params.radius.toFixed(1); };
+            document.getElementById('speed-slider').oninput = (e) => { params.speed = parseFloat(e.target.value); document.getElementById('val-speed').innerText = params.speed.toFixed(1); };
+            document.getElementById('amp-slider').oninput = (e) => { params.amp = parseFloat(e.target.value); document.getElementById('val-amp').innerText = params.amp.toFixed(1); };
+            document.getElementById('freq-slider').oninput = (e) => { params.freq = parseFloat(e.target.value); document.getElementById('val-freq').innerText = params.freq.toFixed(2); };
+            document.getElementById('comp-slider').oninput = (e) => { params.comp = parseFloat(e.target.value); document.getElementById('val-comp').innerText = params.comp.toFixed(1); };
+            document.getElementById('alpha-slider').oninput = (e) => { params.alpha = parseFloat(e.target.value); document.getElementById('val-alpha').innerText = Math.round(params.alpha * 100) + '%'; };
+            document.getElementById('points-slider').oninput = (e) => { params.count = parseInt(e.target.value); document.getElementById('val-points').innerText = (params.count / 1000) + 'k'; };
+            document.getElementById('line-toggle').onchange = (e) => params.showLines = e.target.checked;
+
+            background(0);
+        }
+
+        function draw() {
+            background(0);
+            const timeStep = (min(deltaTime, 100) / 16.67);
+            
+            // Tanks limits in Logical Pixels (width/height are already logical in p5)
+            const limitX = width / (2 * viewZoom);
+            const limitY = height / (2 * viewZoom);
+            const rangeX = limitX * 2, rangeY = limitY * 2;
+
+            if (!isPaused) {
+                fractalTime += (PI / 45) * timeStep * params.speed;
+                const effectiveRadius = params.radius * (params.speed / 5.0);
+
+                jellyfish.forEach(agent => {
+                    agent.posX += agent.velX * effectiveRadius * timeStep;
+                    agent.posY += agent.velY * effectiveRadius * timeStep;
+                    
+                    // Track logical tile to trigger drift at the moment of visual collision
+                    const curTileX = Math.floor((agent.posX + limitX) / rangeX);
+                    const curTileY = Math.floor((agent.posY + limitY) / rangeY);
+                    
+                    if (curTileX !== agent.lastTileX || curTileY !== agent.lastTileY) {
+                        agent.angle += (Math.random() - 0.5) * 0.1; 
+                        agent.velX = cos(agent.angle);
+                        agent.velY = sin(agent.angle);
+                        agent.lastTileX = curTileX;
+                        agent.lastTileY = curTileY;
+                    }
+                });
+            }
+
+            if (!workerStatus.some(s => s)) {
+                const chunkSize = Math.ceil(jellyfish.length / threadCount);
+                for (let i = 0; i < threadCount; i++) {
+                    const start = i * chunkSize, end = Math.min(start + chunkSize, jellyfish.length);
+                    const chunk = jellyfish.slice(start, end);
+                    if (chunk.length > 0) {
+                        workerStatus[i] = true;
+                        workers[i].postMessage({
+                            type: 'render', workerId: i,
+                            w: offscreenCanvases[i].width, h: offscreenCanvases[i].height,
+                            time: fractalTime,
+                            // Passing logical width/height to worker
+                            params: { ...params, alpha: params.alpha * Math.min(1, (millis()-loadStartTime)/1000), zoom: viewZoom, limitX, limitY, jellyfish: chunk }
+                        });
+                    }
+                }
+            }
+
+            push();
+            translate(viewOffsetX, viewOffsetY);
+            // Draw Offscreen buffers back onto main canvas
+            for (let i = 0; i < threadCount; i++) {
+                drawingContext.drawImage(offscreenCanvases[i], 0, 0, width, height);
+            }
+            pop();
+            
+            document.getElementById('fps').innerText = `FPS: ${floor(frameRate())}`;
+            document.getElementById('zoom-label').innerText = `Zoom: ${viewZoom.toFixed(2)}x`;
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            const dPR = displayDensity();
+            offscreenCanvases.forEach(osc => {
+                osc.width = width * dPR;
+                osc.height = height * dPR;
+            });
+            
+            // Re-sync logical tile tracking to prevent drift glitching during window size changes
+            const limitX = width / (2 * viewZoom), limitY = height / (2 * viewZoom);
+            const rangeX = limitX * 2, rangeY = limitY * 2;
+            jellyfish.forEach(agent => {
+                agent.lastTileX = Math.floor((agent.posX + limitX) / rangeX);
+                agent.lastTileY = Math.floor((agent.posY + limitY) / rangeY);
+            });
+        }
+
+        function mouseWheel(event) { viewZoom = constrain(viewZoom - event.delta * 0.001 * viewZoom, 0.05, 50); return false; }
+        function mousePressed() { if (mouseX < 230 && mouseY < 480) return; prevMouseX = mouseX; prevMouseY = mouseY; }
+        function mouseDragged() { if (touches.length < 2 && prevMouseX !== undefined) { viewOffsetX += (mouseX - prevMouseX); viewOffsetY += (mouseY - prevMouseY); prevMouseX = mouseX; prevMouseY = mouseY; } }
+        function touchMoved() { if (touches.length === 2) { let d = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y); if (lastPinchDist > 0) viewZoom = constrain(viewZoom + (d - lastPinchDist) * 0.01 * viewZoom, 0.05, 50); lastPinchDist = d; } else if (prevMouseX !== undefined) { viewOffsetX += (touches[0].x - prevMouseX); viewOffsetY += (touches[0].y - prevMouseY); prevMouseX = touches[0].x; prevMouseY = touches[0].y; } return false; }
+        function touchStarted() { if (touches.length === 2) { lastPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y); } else { if (touches[0].x < 230 && touches[0].y < 480) { prevMouseX = undefined; return; } prevMouseX = touches[0].x; prevMouseY = touches[0].y; } }
+        function touchEnded() { lastPinchDist = 0; prevMouseX = undefined; }
+        function toggleFullscreen() { fullscreen(!fullscreen()); }
+        function togglePlayPause() { isPaused = !isPaused; document.getElementById('play-pause-btn').innerText = isPaused ? 'Play' : 'Pause'; }
+        function takeScreenshot() { saveCanvas('jellyfish_fishtank_fixed_' + floor(Date.now() / 1000), 'png'); }
+    </script>
+</body>
+</html>
