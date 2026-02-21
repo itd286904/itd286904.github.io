@@ -210,7 +210,6 @@
             <div class="control-group">
                 <label>Points</label>
                 <div class="slider-row">
-                    <!-- Range updated: up to 25k -->
                     <input type="range" id="points-slider" min="2000" max="25000" step="1000" value="20000">
                     <span class="val-display" id="val-points">20k</span>
                 </div>
@@ -270,7 +269,12 @@
             
             const mX = w / 2;
             const mY = h / 2;
-            const S = (Math.min(logicalW, logicalH) / 400) * dPR;
+            
+            // To preserve aspect ratio and cause elliptical motion in wide windows,
+            // we calculate scale factors for X and Y separately based on the logical size.
+            // This maps the original 400x400 unit coordinate system to the full logical window.
+            const sX = (logicalW / 400) * dPR;
+            const sY = (logicalH / 400) * dPR;
             
             const showLines = params.showLines;
             const baseSW = isMobile ? 0.8 : 1.0;
@@ -312,8 +316,9 @@
                         const rawX = q * Math.sin(c);
                         const rawY = (q + 40) * Math.cos(c);
                         
-                        const px = (rawX * zoom) * S + mX;
-                        const py = (rawY * zoom) * S + mY;
+                        // Use separate scale factors sX and sY to follow window aspect ratio
+                        const px = (rawX * zoom) * sX + mX;
+                        const py = (rawY * zoom) * sY + mY;
                         
                         if (first) {
                             ctx.moveTo(px, py);
@@ -340,8 +345,8 @@
                     const rawX = q * Math.sin(c);
                     const rawY = (q + 40) * Math.cos(c);
                     
-                    const px = (rawX * zoom) * S + mX;
-                    const py = (rawY * zoom) * S + mY;
+                    const px = (rawX * zoom) * sX + mX;
+                    const py = (rawY * zoom) * sY + mY;
                     
                     ctx.fillRect(px - sw/2, py - sw/2, sw, sw);
                 }
@@ -409,10 +414,11 @@
             const blob = new Blob([document.getElementById('worker-script').textContent], { type: 'text/javascript' });
             worker = new Worker(URL.createObjectURL(blob));
 
-            const bufferSize = min(w, h) * dPR;
+            const bufferSizeW = w * dPR;
+            const bufferSizeH = h * dPR;
             offscreenCanvas = document.createElement('canvas');
-            offscreenCanvas.width = bufferSize;
-            offscreenCanvas.height = bufferSize;
+            offscreenCanvas.width = bufferSizeW;
+            offscreenCanvas.height = bufferSizeH;
             
             const offscreen = offscreenCanvas.transferControlToOffscreen();
 
