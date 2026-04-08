@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://p5js.org/assets/img/p5js.svg">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <link rel="stylesheet" href="controls.css?v=20260409b">
     <style>
         body {
             margin: 0;
@@ -42,55 +42,6 @@
             pointer-events: none;
             user-select: none;
             z-index: 10;
-        }
-
-        #control-box {
-            background: rgba(20, 20, 20, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            pointer-events: auto;
-            backdrop-filter: blur(5px);
-            width: 210px;
-        }
-
-        .control-group {
-            margin-bottom: 8px;
-        }
-
-        .control-group label {
-            display: block;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-
-        .slider-row {
-            display: flex;
-            align-items: center; gap: 10px;
-        }
-
-        .toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 4px;
-        }
-
-        .control-group input[type=range] {
-            flex-grow: 1;
-            cursor: pointer;
-            accent-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .val-display {
-            font-size: 11px;
-            font-family: monospace;
-            min-width: 35px;
-            text-align: right;
-            color: rgba(255, 255, 255, 0.6);
         }
 
         .button-stack {
@@ -133,33 +84,6 @@
         }
         #credits a { color: inherit; text-decoration: none; }
         #credits a:hover { color: rgba(255, 255, 255, 0.6); }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 30px;
-            height: 16px;
-        }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider-toggle {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255,255,255,0.1);
-            transition: .4s;
-            border-radius: 16px;
-        }
-        .slider-toggle:before {
-            position: absolute;
-            content: "";
-            height: 12px; width: 12px;
-            left: 2px; bottom: 2px;
-            background-color: rgba(255,255,255,0.4);
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider-toggle { background-color: rgba(255,255,255,0.3); }
-        input:checked + .slider-toggle:before { transform: translateX(14px); background-color: white; }
     </style>
 </head>
 <body>
@@ -170,11 +94,12 @@
             <span id="zoom-label">Zoom: 1.00x</span>
         </div>
 
-        <div id="control-box">
+        <div id="control-box" class="control-box">
             <div class="control-group">
                 <label>Jellyfish Count</label>
                 <div class="slider-row">
                     <input type="range" id="petals-slider" min="1" max="50" step="1" value="5">
+                    <input type="number" class="control-input" id="petals-input" min="1" max="50" step="1" value="5" inputmode="numeric">
                     <span class="val-display" id="val-petals">5</span>
                 </div>
             </div>
@@ -182,6 +107,7 @@
                 <label>Movement Power</label>
                 <div class="slider-row">
                     <input type="range" id="radius-slider" min="0" max="10" step="0.1" value="3.5">
+                    <input type="text" class="control-input" id="radius-input" min="0" max="10" step="0.1" value="3.5" inputmode="decimal">
                     <span class="val-display" id="val-radius">3.5</span>
                 </div>
             </div>
@@ -189,6 +115,7 @@
                 <label>Pulse Speed (Link)</label>
                 <div class="slider-row">
                     <input type="range" id="speed-slider" min="0" max="10" step="0.1" value="5">
+                    <input type="text" class="control-input" id="speed-input" min="0" max="10" step="0.1" value="5" inputmode="decimal">
                     <span class="val-display" id="val-speed">5.0</span>
                 </div>
             </div>
@@ -196,6 +123,7 @@
                 <label>Amplitude</label>
                 <div class="slider-row">
                     <input type="range" id="amp-slider" min="0" max="5" step="0.1" value="3">
+                    <input type="text" class="control-input" id="amp-input" min="0" max="5" step="0.1" value="3" inputmode="decimal">
                     <span class="val-display" id="val-amp">3.0</span>
                 </div>
             </div>
@@ -203,20 +131,23 @@
                 <label>Frequency</label>
                 <div class="slider-row">
                     <input type="range" id="freq-slider" min="0.01" max="1" step="0.01" value="0.60">
+                    <input type="text" class="control-input" id="freq-input" min="0.01" max="1" step="0.1" value="0.6" inputmode="decimal">
                     <span class="val-display" id="val-freq">0.60</span>
                 </div>
             </div>
             <div class="control-group">
                 <label>Complexity</label>
                 <div class="slider-row">
-                    <input type="range" id="comp-slider" min="1" max="50" step="1" value="9.0">
+                    <input type="range" id="comp-slider" min="1" max="50" step="0.1" value="9.0">
+                    <input type="text" class="control-input" id="comp-input" min="1" max="50" step="0.1" value="9.0" inputmode="decimal">
                     <span class="val-display" id="val-comp">9.0</span>
                 </div>
             </div>
             <div class="control-group">
                 <label>Transparency</label>
                 <div class="slider-row">
-                    <input type="range" id="alpha-slider" min="0.1" max="1.0" step="0.05" value="0.58">
+                    <input type="range" id="alpha-slider" min="0.1" max="1.0" step="0.01" value="0.58">
+                    <input type="text" class="control-input" id="alpha-input" min="0.1" max="1.0" step="0.01" value="0.58" inputmode="decimal">
                     <span class="val-display" id="val-alpha">58%</span>
                 </div>
             </div>
@@ -224,6 +155,7 @@
                 <label>Points / Fish</label>
                 <div class="slider-row">
                     <input type="range" id="points-slider" min="1000" max="30000" step="1000" value="20000">
+                    <input type="number" class="control-input" id="points-input" min="1000" max="30000" step="1000" value="20000" inputmode="numeric">
                     <span class="val-display" id="val-points">20k</span>
                 </div>
             </div>
@@ -236,6 +168,11 @@
                     </label>
                 </div>
             </div>
+            <div class="control-actions">
+                <button class="action-btn" type="button" id="save-config-btn">Save As</button>
+                <button class="action-btn" type="button" id="reset-config-btn">Reset</button>
+            </div>
+            <div class="control-status" id="config-status" aria-live="polite"></div>
         </div>
     </div>
 
@@ -370,6 +307,7 @@
         }
     </script>
 
+    <script src="controls.js?v=20260409b"></script>
     <script>
         let fractalTime = 0;
         let viewZoom = 1.0; 
@@ -437,15 +375,21 @@
                 workerStatus.push(false);
             }
 
-            document.getElementById('petals-slider').oninput = (e) => { params.petals = parseInt(e.target.value); document.getElementById('val-petals').innerText = params.petals; updateJellyfishArray(); };
-            document.getElementById('radius-slider').oninput = (e) => { params.radius = parseFloat(e.target.value); document.getElementById('val-radius').innerText = params.radius.toFixed(1); };
-            document.getElementById('speed-slider').oninput = (e) => { params.speed = parseFloat(e.target.value); document.getElementById('val-speed').innerText = params.speed.toFixed(1); };
-            document.getElementById('amp-slider').oninput = (e) => { params.amp = parseFloat(e.target.value); document.getElementById('val-amp').innerText = params.amp.toFixed(1); };
-            document.getElementById('freq-slider').oninput = (e) => { params.freq = parseFloat(e.target.value); document.getElementById('val-freq').innerText = params.freq.toFixed(2); };
-            document.getElementById('comp-slider').oninput = (e) => { params.comp = parseFloat(e.target.value); document.getElementById('val-comp').innerText = params.comp.toFixed(1); };
-            document.getElementById('alpha-slider').oninput = (e) => { params.alpha = parseFloat(e.target.value); document.getElementById('val-alpha').innerText = Math.round(params.alpha * 100) + '%'; };
-            document.getElementById('points-slider').oninput = (e) => { params.count = parseInt(e.target.value); document.getElementById('val-points').innerText = (params.count / 1000) + 'k'; };
-            document.getElementById('line-toggle').onchange = (e) => params.showLines = e.target.checked;
+            AnimationControls.createPageControls({
+                pageId: 'fishtank',
+                params,
+                controls: [
+                    { key: 'petals', kind: 'range', inputId: 'petals-slider', numberInputId: 'petals-input', displayId: 'val-petals', min: 1, max: 50, step: 1, defaultValue: 5, formatValue: (value) => String(value), onApply: () => updateJellyfishArray() },
+                    { key: 'radius', kind: 'range', inputId: 'radius-slider', numberInputId: 'radius-input', displayId: 'val-radius', min: 0, max: 10, step: 0.1, defaultValue: 3.5, formatValue: (value) => value.toFixed(1) },
+                    { key: 'speed', kind: 'range', inputId: 'speed-slider', numberInputId: 'speed-input', displayId: 'val-speed', min: 0, max: 10, step: 0.1, defaultValue: 5, formatValue: (value) => value.toFixed(1) },
+                    { key: 'amp', kind: 'range', inputId: 'amp-slider', numberInputId: 'amp-input', displayId: 'val-amp', min: 0, max: 5, step: 0.1, defaultValue: 3, formatValue: (value) => value.toFixed(1) },
+                    { key: 'freq', kind: 'range', inputId: 'freq-slider', numberInputId: 'freq-input', displayId: 'val-freq', min: 0.01, max: 1, step: 0.01, defaultValue: 0.6, formatValue: (value) => value.toFixed(2) },
+                    { key: 'comp', kind: 'range', inputId: 'comp-slider', numberInputId: 'comp-input', displayId: 'val-comp', min: 1, max: 50, step: 0.1, defaultValue: 9, formatValue: (value) => value.toFixed(1) },
+                    { key: 'alpha', kind: 'range', inputId: 'alpha-slider', numberInputId: 'alpha-input', displayId: 'val-alpha', min: 0.1, max: 1.0, step: 0.01, defaultValue: 0.58, formatValue: (value) => `${Math.round(value * 100)}%` },
+                    { key: 'count', kind: 'range', inputId: 'points-slider', numberInputId: 'points-input', displayId: 'val-points', min: 1000, max: 30000, step: 1000, defaultValue: 20000, formatValue: (value) => `${value / 1000}k` },
+                    { key: 'showLines', kind: 'checkbox', inputId: 'line-toggle', defaultValue: false }
+                ]
+            }).initialize();
 
             background(0);
         }
@@ -528,12 +472,23 @@
             });
         }
 
-        function mouseWheel(event) { viewZoom = constrain(viewZoom - event.delta * 0.001 * viewZoom, 0.05, 50); return false; }
-        function mousePressed() { if (mouseX < 230 && mouseY < 480) return; prevMouseX = mouseX; prevMouseY = mouseY; }
+        function mouseWheel(event) { if (isOverUi(mouseX, mouseY)) return false; viewZoom = constrain(viewZoom - event.delta * 0.001 * viewZoom, 0.05, 50); return false; }
+        function mousePressed() { if (isOverUi(mouseX, mouseY)) return; prevMouseX = mouseX; prevMouseY = mouseY; }
         function mouseDragged() { if (touches.length < 2 && prevMouseX !== undefined) { viewOffsetX += (mouseX - prevMouseX); viewOffsetY += (mouseY - prevMouseY); prevMouseX = mouseX; prevMouseY = mouseY; } }
         function touchMoved() { if (touches.length === 2) { let d = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y); if (lastPinchDist > 0) viewZoom = constrain(viewZoom + (d - lastPinchDist) * 0.01 * viewZoom, 0.05, 50); lastPinchDist = d; } else if (prevMouseX !== undefined) { viewOffsetX += (touches[0].x - prevMouseX); viewOffsetY += (touches[0].y - prevMouseY); prevMouseX = touches[0].x; prevMouseY = touches[0].y; } return false; }
-        function touchStarted() { if (touches.length === 2) { lastPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y); } else { if (touches[0].x < 230 && touches[0].y < 480) { prevMouseX = undefined; return; } prevMouseX = touches[0].x; prevMouseY = touches[0].y; } }
+        function touchStarted() { if (touches.length === 2) { lastPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y); } else { if (isOverUi(touches[0].x, touches[0].y)) { prevMouseX = undefined; return; } prevMouseX = touches[0].x; prevMouseY = touches[0].y; } }
         function touchEnded() { lastPinchDist = 0; prevMouseX = undefined; }
+        function isOverUi(pointerX, pointerY) {
+            const canvasElement = document.querySelector('canvas');
+            if (!canvasElement) return false;
+            const bounds = canvasElement.getBoundingClientRect();
+            const viewportX = bounds.left + pointerX;
+            const viewportY = bounds.top + pointerY;
+
+            return AnimationControls.isPointInsideElement('#control-box', viewportX, viewportY)
+                || AnimationControls.isPointInsideElement('.button-stack', viewportX, viewportY)
+                || AnimationControls.isPointInsideElement('#credits', viewportX, viewportY);
+        }
         function toggleFullscreen() { fullscreen(!fullscreen()); }
         function togglePlayPause() { isPaused = !isPaused; document.getElementById('play-pause-btn').innerText = isPaused ? 'Play' : 'Pause'; }
         function takeScreenshot() { saveCanvas('jellyfish_fishtank_fixed_' + floor(Date.now() / 1000), 'png'); }

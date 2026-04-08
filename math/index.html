@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Multithreaded Fractal Explorer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <link rel="stylesheet" href="controls.css?v=20260409b">
     <style>
         body {
             margin: 0;
@@ -29,56 +30,6 @@
             pointer-events: none;
             user-select: none;
             z-index: 10;
-        }
-
-        #control-box {
-            background: rgba(20, 20, 20, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            pointer-events: auto;
-            backdrop-filter: blur(5px);
-            width: 210px;
-        }
-
-        .control-group {
-            margin-bottom: 8px;
-        }
-
-        .control-group label {
-            display: block;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-
-        .slider-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 4px;
-        }
-
-        .control-group input[type=range] {
-            flex-grow: 1;
-            cursor: pointer;
-            accent-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .val-display {
-            font-size: 11px;
-            font-family: monospace;
-            min-width: 35px;
-            text-align: right;
-            color: rgba(255, 255, 255, 0.6);
         }
 
         .button-stack {
@@ -121,33 +72,6 @@
         }
         #credits a { color: inherit; text-decoration: none; }
         #credits a:hover { color: rgba(255, 255, 255, 0.6); }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 30px;
-            height: 16px;
-        }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider-toggle {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255,255,255,0.1);
-            transition: .4s;
-            border-radius: 16px;
-        }
-        .slider-toggle:before {
-            position: absolute;
-            content: "";
-            height: 12px; width: 12px;
-            left: 2px; bottom: 2px;
-            background-color: rgba(255,255,255,0.4);
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider-toggle { background-color: rgba(255,255,255,0.3); }
-        input:checked + .slider-toggle:before { transform: translateX(14px); background-color: white; }
     </style>
 </head>
 <body>
@@ -157,12 +81,12 @@
             <span id="zoom-label">Zoom: 0.67x</span>
         </div>
 
-        <div id="control-box">
+        <div id="control-box" class="control-box">
             <div class="control-group">
                 <label>Petals</label>
                 <div class="slider-row">
-                    <!-- Updated min from 3 to 1 -->
                     <input type="range" id="petals-slider" min="1" max="24" step="1" value="8">
+                    <input type="number" class="control-input" id="petals-input" min="1" max="24" step="1" value="8" inputmode="numeric">
                     <span class="val-display" id="val-petals">8</span>
                 </div>
             </div>
@@ -170,6 +94,7 @@
                 <label>Speed</label>
                 <div class="slider-row">
                     <input type="range" id="speed-slider" min="0" max="5" step="0.1" value="1">
+                    <input type="text" class="control-input" id="speed-input" min="0" max="5" step="0.1" value="1" inputmode="decimal">
                     <span class="val-display" id="val-speed">1.0</span>
                 </div>
             </div>
@@ -177,6 +102,7 @@
                 <label>Amplitude</label>
                 <div class="slider-row">
                     <input type="range" id="amp-slider" min="1" max="25" step="0.5" value="7">
+                    <input type="text" class="control-input" id="amp-input" min="1" max="25" step="0.1" value="7" inputmode="decimal">
                     <span class="val-display" id="val-amp">7.0</span>
                 </div>
             </div>
@@ -184,6 +110,7 @@
                 <label>Frequency</label>
                 <div class="slider-row">
                     <input type="range" id="freq-slider" min="0.5" max="10" step="0.1" value="3">
+                    <input type="text" class="control-input" id="freq-input" min="0.5" max="10" step="0.1" value="3" inputmode="decimal">
                     <span class="val-display" id="val-freq">3.0</span>
                 </div>
             </div>
@@ -191,13 +118,15 @@
                 <label>Complexity</label>
                 <div class="slider-row">
                     <input type="range" id="comp-slider" min="1" max="20" step="0.5" value="9">
+                    <input type="text" class="control-input" id="comp-input" min="1" max="20" step="0.1" value="9" inputmode="decimal">
                     <span class="val-display" id="val-comp">9.0</span>
                 </div>
             </div>
             <div class="control-group">
                 <label>Transparency</label>
                 <div class="slider-row">
-                    <input type="range" id="alpha-slider" min="0.1" max="1.0" step="0.05" value="0.58">
+                    <input type="range" id="alpha-slider" min="0.1" max="1.0" step="0.01" value="0.58">
+                    <input type="text" class="control-input" id="alpha-input" min="0.1" max="1.0" step="0.01" value="0.58" inputmode="decimal">
                     <span class="val-display" id="val-alpha">58%</span>
                 </div>
             </div>
@@ -205,6 +134,7 @@
                 <label>Points</label>
                 <div class="slider-row">
                     <input type="range" id="points-slider" min="2000" max="50000" step="1000" value="20000">
+                    <input type="number" class="control-input" id="points-input" min="2000" max="50000" step="1000" value="20000" inputmode="numeric">
                     <span class="val-display" id="val-points">20k</span>
                 </div>
             </div>
@@ -224,6 +154,11 @@
                     </label>
                 </div>
             </div>
+            <div class="control-actions">
+                <button class="action-btn" type="button" id="save-config-btn">Save As</button>
+                <button class="action-btn" type="button" id="reset-config-btn">Reset</button>
+            </div>
+            <div class="control-status" id="config-status" aria-live="polite"></div>
         </div>
     </div>
 
@@ -335,6 +270,7 @@
         }
     </script>
 
+    <script src="controls.js?v=20260409b"></script>
     <script>
         let fractalTime = 0;
         let viewZoom = 0.67; 
@@ -405,40 +341,21 @@
                 if (e.data.type === 'rendered') workerBusy = false;
             };
 
-            document.getElementById('petals-slider').oninput = (e) => {
-                params.petals = parseInt(e.target.value);
-                document.getElementById('val-petals').innerText = params.petals;
-            };
-            document.getElementById('speed-slider').oninput = (e) => {
-                params.speed = parseFloat(e.target.value);
-                document.getElementById('val-speed').innerText = params.speed.toFixed(1);
-            };
-            document.getElementById('amp-slider').oninput = (e) => {
-                params.amp = parseFloat(e.target.value);
-                document.getElementById('val-amp').innerText = params.amp.toFixed(1);
-            };
-            document.getElementById('freq-slider').oninput = (e) => {
-                params.freq = parseFloat(e.target.value);
-                document.getElementById('val-freq').innerText = params.freq.toFixed(1);
-            };
-            document.getElementById('comp-slider').oninput = (e) => {
-                params.comp = parseFloat(e.target.value);
-                document.getElementById('val-comp').innerText = params.comp.toFixed(1);
-            };
-            document.getElementById('alpha-slider').oninput = (e) => {
-                params.alpha = parseFloat(e.target.value);
-                document.getElementById('val-alpha').innerText = Math.round(params.alpha * 100) + '%';
-            };
-            document.getElementById('points-slider').oninput = (e) => {
-                params.count = parseInt(e.target.value);
-                document.getElementById('val-points').innerText = (params.count / 1000) + 'k';
-            };
-            document.getElementById('line-toggle').onchange = (e) => {
-                params.showLines = e.target.checked;
-            };
-            document.getElementById('symmetry-toggle').onchange = (e) => {
-                params.showSymmetry = e.target.checked;
-            };
+            AnimationControls.createPageControls({
+                pageId: 'index',
+                params,
+                controls: [
+                    { key: 'petals', kind: 'range', inputId: 'petals-slider', numberInputId: 'petals-input', displayId: 'val-petals', min: 1, max: 24, step: 1, defaultValue: 8, formatValue: (value) => String(value) },
+                    { key: 'speed', kind: 'range', inputId: 'speed-slider', numberInputId: 'speed-input', displayId: 'val-speed', min: 0, max: 5, step: 0.1, defaultValue: 1.0, formatValue: (value) => value.toFixed(1) },
+                    { key: 'amp', kind: 'range', inputId: 'amp-slider', numberInputId: 'amp-input', displayId: 'val-amp', min: 1, max: 25, step: 0.5, defaultValue: 7, formatValue: (value) => value.toFixed(1) },
+                    { key: 'freq', kind: 'range', inputId: 'freq-slider', numberInputId: 'freq-input', displayId: 'val-freq', min: 0.5, max: 10, step: 0.1, defaultValue: 3, formatValue: (value) => value.toFixed(1) },
+                    { key: 'comp', kind: 'range', inputId: 'comp-slider', numberInputId: 'comp-input', displayId: 'val-comp', min: 1, max: 20, step: 0.5, defaultValue: 9, formatValue: (value) => value.toFixed(1) },
+                    { key: 'alpha', kind: 'range', inputId: 'alpha-slider', numberInputId: 'alpha-input', displayId: 'val-alpha', min: 0.1, max: 1.0, step: 0.01, defaultValue: 0.58, formatValue: (value) => `${Math.round(value * 100)}%` },
+                    { key: 'count', kind: 'range', inputId: 'points-slider', numberInputId: 'points-input', displayId: 'val-points', min: 2000, max: 50000, step: 1000, defaultValue: 20000, formatValue: (value) => `${value / 1000}k` },
+                    { key: 'showSymmetry', kind: 'checkbox', inputId: 'symmetry-toggle', defaultValue: true },
+                    { key: 'showLines', kind: 'checkbox', inputId: 'line-toggle', defaultValue: false }
+                ]
+            }).initialize();
 
             background(0);
         }
@@ -499,13 +416,13 @@
         }
 
         function mouseWheel(event) {
+            if (isOverUi(mouseX, mouseY)) return false;
             viewZoom = constrain(viewZoom - event.delta * 0.001 * viewZoom, 0.05, 50);
             return false;
         }
 
         function mousePressed() {
-            if (mouseX < 230 && mouseY < 450) return;
-            if (mouseY < 120 && mouseX > width - 120) return;
+            if (isOverUi(mouseX, mouseY)) return;
             prevMouseX = mouseX; prevMouseY = mouseY;
         }
 
@@ -517,6 +434,18 @@
                     prevMouseX = mouseX; prevMouseY = mouseY;
                 }
             }
+        }
+
+        function isOverUi(pointerX, pointerY) {
+            const canvasElement = document.querySelector('canvas');
+            if (!canvasElement) return false;
+            const bounds = canvasElement.getBoundingClientRect();
+            const viewportX = bounds.left + pointerX;
+            const viewportY = bounds.top + pointerY;
+
+            return AnimationControls.isPointInsideElement('#control-box', viewportX, viewportY)
+                || AnimationControls.isPointInsideElement('.button-stack', viewportX, viewportY)
+                || AnimationControls.isPointInsideElement('#credits', viewportX, viewportY);
         }
 
         function touchMoved() {
@@ -536,11 +465,7 @@
             if (touches.length === 2) {
                 lastPinchDist = dist(touches[0].x, touches[0].y, touches[1].x, touches[1].y);
             } else {
-                if (touches[0].x < 230 && touches[0].y < 450) {
-                    prevMouseX = undefined;
-                    return;
-                }
-                if (touches[0].x > width - 120 && touches[0].y < 120) {
+                if (isOverUi(touches[0].x, touches[0].y)) {
                     prevMouseX = undefined;
                     return;
                 }
