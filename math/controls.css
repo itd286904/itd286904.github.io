@@ -1,0 +1,194 @@
+.control-box {
+    background: rgba(20, 20, 20, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    pointer-events: auto;
+    backdrop-filter: blur(5px);
+    width: min(280px, calc(100vw - 30px));
+}
+
+.control-box__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.control-box__title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.control-box__toggle {
+    min-width: 88px;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+.control-box.is-collapsed .control-box__header {
+    margin-bottom: 0;
+}
+
+.control-box.is-collapsed .control-box__body {
+    display: none;
+}
+
+.control-group {
+    margin-bottom: 8px;
+}
+
+.control-group label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+.control-group input[type=range] {
+    flex: 1 1 auto;
+    min-width: 0;
+    cursor: pointer;
+    accent-color: rgba(255, 255, 255, 0.5);
+}
+
+.control-input {
+    width: 72px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.82);
+    font-family: monospace;
+    font-size: 12px;
+    padding: 5px 6px;
+    box-sizing: border-box;
+}
+
+.control-input--full {
+    width: 100%;
+}
+
+.control-select {
+    appearance: none;
+    cursor: pointer;
+}
+
+.control-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.val-display {
+    font-size: 11px;
+    font-family: monospace;
+    min-width: 40px;
+    text-align: right;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.control-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.control-actions .action-btn {
+    flex: 1 1 0;
+}
+
+.action-btn:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.action-btn.action-btn--danger {
+    background: rgba(125, 34, 34, 0.22);
+    border-color: rgba(220, 100, 100, 0.28);
+    color: rgba(255, 185, 185, 0.82);
+}
+
+.action-btn.action-btn--danger:hover:not(:disabled) {
+    background: rgba(160, 40, 40, 0.34);
+    color: rgba(255, 215, 215, 0.92);
+}
+
+.control-status {
+    min-height: 14px;
+    margin-top: 6px;
+    font-family: sans-serif;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.control-status[data-state="success"] {
+    color: rgba(180, 255, 200, 0.85);
+}
+
+.control-status[data-state="error"] {
+    color: rgba(255, 170, 170, 0.9);
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 30px;
+    height: 16px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider-toggle {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255,255,255,0.1);
+    transition: .4s;
+    border-radius: 16px;
+}
+
+.slider-toggle:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 2px;
+    bottom: 2px;
+    background-color: rgba(255,255,255,0.4);
+    transition: .4s;
+    border-radius: 50%;
+}
+
+.switch input:checked + .slider-toggle {
+    background-color: rgba(255,255,255,0.3);
+}
+
+.switch input:checked + .slider-toggle:before {
+    transform: translateX(14px);
+    background-color: white;
+}

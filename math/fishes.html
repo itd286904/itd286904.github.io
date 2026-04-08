@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://p5js.org/assets/img/p5js.svg">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <link rel="stylesheet" href="controls.css?v=20260409b">
     <style>
         body {
             margin: 0;
@@ -40,48 +40,6 @@
             pointer-events: none;
             user-select: none;
             z-index: 10;
-        }
-
-        #control-box {
-            background: rgba(20, 20, 20, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            pointer-events: auto;
-            backdrop-filter: blur(5px);
-            width: 210px;
-        }
-
-        .control-group {
-            margin-bottom: 8px;
-        }
-
-        .control-group label {
-            display: block;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-
-        .slider-row {
-            display: flex;
-            align-items: center; gap: 10px;
-        }
-
-        .control-group input[type=range] {
-            flex-grow: 1;
-            cursor: pointer;
-            accent-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .val-display {
-            font-size: 11px;
-            font-family: monospace;
-            min-width: 35px;
-            text-align: right;
-            color: rgba(255, 255, 255, 0.6);
         }
 
         .button-stack {
@@ -138,11 +96,12 @@
             <span id="zoom-label">Zoom: 2.50x</span>
         </div>
 
-        <div id="control-box" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+        <div id="control-box" class="control-box" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
             <div class="control-group">
                 <label>Jellyfish Count</label>
                 <div class="slider-row">
                     <input type="range" id="petals-slider" min="1" max="50" step="1" value="1">
+                    <input type="number" class="control-input" id="petals-input" min="1" max="50" step="1" value="1" inputmode="numeric">
                     <span class="val-display" id="val-petals">1</span>
                 </div>
             </div>
@@ -150,13 +109,15 @@
                 <label>Pulse & Swim Speed</label>
                 <div class="slider-row">
                     <input type="range" id="speed-slider" min="0" max="10" step="0.1" value="1.0">
+                    <input type="text" class="control-input" id="speed-input" min="0" max="10" step="0.1" value="1.0" inputmode="decimal">
                     <span class="val-display" id="val-speed">1.0</span>
                 </div>
             </div>
             <div class="control-group">
                 <label>Transparency</label>
                 <div class="slider-row">
-                    <input type="range" id="alpha-slider" min="0.1" max="2.0" step="0.05" value="1.0">
+                    <input type="range" id="alpha-slider" min="0.1" max="2.0" step="0.01" value="1.0">
+                    <input type="text" class="control-input" id="alpha-input" min="0.1" max="2.0" step="0.01" value="1.00" inputmode="decimal">
                     <span class="val-display" id="val-alpha">100%</span>
                 </div>
             </div>
@@ -164,9 +125,15 @@
                 <label>Points / Fish</label>
                 <div class="slider-row">
                     <input type="range" id="points-slider" min="1000" max="100000" step="1000" value="20000">
+                    <input type="number" class="control-input" id="points-input" min="1000" max="100000" step="1000" value="20000" inputmode="numeric">
                     <span class="val-display" id="val-points">20k</span>
                 </div>
             </div>
+            <div class="control-actions">
+                <button class="action-btn" type="button" id="save-config-btn">Save As</button>
+                <button class="action-btn" type="button" id="reset-config-btn">Reset</button>
+            </div>
+            <div class="control-status" id="config-status" aria-live="polite"></div>
         </div>
     </div>
 
@@ -260,6 +227,7 @@
         }
     </script>
 
+    <script src="controls.js?v=20260409b"></script>
     <script>
         let fractalTime = 0;
         let viewZoom = 2.5; 
@@ -344,23 +312,16 @@
                 workerStatus.push(false);
             }
 
-            document.getElementById('petals-slider').oninput = (e) => { 
-                params.petals = parseInt(e.target.value); 
-                document.getElementById('val-petals').innerText = params.petals; 
-                updateJellyfishArray(); 
-            };
-            document.getElementById('speed-slider').oninput = (e) => { 
-                params.speed = parseFloat(e.target.value); 
-                document.getElementById('val-speed').innerText = params.speed.toFixed(1); 
-            };
-            document.getElementById('alpha-slider').oninput = (e) => { 
-                params.alpha = parseFloat(e.target.value); 
-                document.getElementById('val-alpha').innerText = Math.round(params.alpha * 100) + '%'; 
-            };
-            document.getElementById('points-slider').oninput = (e) => { 
-                params.count = parseInt(e.target.value); 
-                document.getElementById('val-points').innerText = (params.count / 1000) + 'k'; 
-            };
+            AnimationControls.createPageControls({
+                pageId: 'fishes',
+                params,
+                controls: [
+                    { key: 'petals', kind: 'range', inputId: 'petals-slider', numberInputId: 'petals-input', displayId: 'val-petals', min: 1, max: 50, step: 1, defaultValue: 1, formatValue: (value) => String(value), onApply: () => updateJellyfishArray() },
+                    { key: 'speed', kind: 'range', inputId: 'speed-slider', numberInputId: 'speed-input', displayId: 'val-speed', min: 0, max: 10, step: 0.1, defaultValue: 1.0, formatValue: (value) => value.toFixed(1) },
+                    { key: 'alpha', kind: 'range', inputId: 'alpha-slider', numberInputId: 'alpha-input', displayId: 'val-alpha', min: 0.1, max: 2.0, step: 0.01, defaultValue: 1.0, formatValue: (value) => `${Math.round(value * 100)}%` },
+                    { key: 'count', kind: 'range', inputId: 'points-slider', numberInputId: 'points-input', displayId: 'val-points', min: 1000, max: 100000, step: 1000, defaultValue: 20000, formatValue: (value) => `${value / 1000}k` }
+                ]
+            }).initialize();
 
             ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(event => {
                 document.addEventListener(event, () => {
@@ -445,11 +406,16 @@
             });
         }
 
-        function isOverUI() {
-            const overLeft = mouseX < 240 && mouseY < 320;
-            const overRight = mouseX > width - 150 && mouseY < 200;
-            const overBottomRight = mouseX > width - 200 && mouseY > height - 60;
-            return overLeft || overRight || overBottomRight;
+        function isOverUI(pointerX = mouseX, pointerY = mouseY) {
+            const canvasElement = document.querySelector('canvas');
+            if (!canvasElement) return false;
+            const bounds = canvasElement.getBoundingClientRect();
+            const viewportX = bounds.left + pointerX;
+            const viewportY = bounds.top + pointerY;
+
+            return AnimationControls.isPointInsideElement('#control-box', viewportX, viewportY)
+                || AnimationControls.isPointInsideElement('.button-stack', viewportX, viewportY)
+                || AnimationControls.isPointInsideElement('#credits', viewportX, viewportY);
         }
 
         function mousePressed() { 
